@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { tasksApi } from '../api/tasks';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '../api/projects';
 import { usersApi } from '../api/users';
+import { useTasks } from '../hooks/useTasks';
 import { Task, TaskStatus } from '../types';
 import { Navbar } from '../components/Navbar';
 import { TaskCard } from '../components/TaskCard';
@@ -21,24 +21,19 @@ export function TasksPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const queryClient = useQueryClient();
 
-  const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<TaskStatus | ''>('');
+  const {
+    tasksQuery, page, setPage, statusFilter, changeFilter,
+    createMutation, statusMutation, assignMutation, deleteMutation,
+  } = useTasks(projectId!);
+
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [assigningTask, setAssigningTask] = useState<Task | null>(null);
-
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newAssigneeId, setNewAssigneeId] = useState('');
   const [memberUserId, setMemberUserId] = useState('');
   const [assigneeId, setAssigneeId] = useState('');
-
-  const tasksQuery = useQuery({
-    queryKey: ['tasks', projectId, page, statusFilter],
-    queryFn: () => tasksApi.getAll(projectId!, { page, limit: 10, status: statusFilter || undefined }),
-    placeholderData: keepPreviousData,
-    enabled: !!projectId,
-  });
 
   const projectQuery = useQuery({
     queryKey: ['project', projectId],
@@ -49,38 +44,6 @@ export function TasksPage() {
   const usersQuery = useQuery({
     queryKey: ['users'],
     queryFn: usersApi.getAll,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (data: { title: string; description?: string; assigneeId?: string }) =>
-      tasksApi.create(projectId!, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
-      setShowCreateForm(false);
-      setNewTitle('');
-      setNewDesc('');
-      setNewAssigneeId('');
-    },
-  });
-
-  const statusMutation = useMutation({
-    mutationFn: ({ taskId, status }: { taskId: string; status: TaskStatus }) =>
-      tasksApi.updateStatus(taskId, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks', projectId] }),
-  });
-
-  const assignMutation = useMutation({
-    mutationFn: ({ taskId, assigneeId }: { taskId: string; assigneeId: string }) =>
-      tasksApi.assign(taskId, assigneeId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
-      setAssigningTask(null);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: tasksApi.delete,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks', projectId] }),
   });
 
   const addMemberMutation = useMutation({
@@ -94,17 +57,16 @@ export function TasksPage() {
 
   const handleCreateTask = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate({
-      title: newTitle,
-      description: newDesc || undefined,
-      assigneeId: newAssigneeId || undefined,
-    });
+    createMutation.mutate(
+      { title: newTitle, description: newDesc || undefined, assigneeId: newAssigneeId || undefined },
+      { onSuccess: () => { setShowCreateForm(false); setNewTitle(''); setNewDesc(''); setNewAssigneeId(''); } },
+    );
   };
 
   const handleAssign = (e: React.FormEvent) => {
     e.preventDefault();
     if (assigningTask && assigneeId) {
-      assignMutation.mutate({ taskId: assigningTask.id, assigneeId });
+      assignMutation.mutate({ taskId: assigningTask.id, assigneeId }, { onSuccess: () => setAssigningTask(null) });
     }
   };
 
@@ -113,7 +75,7 @@ export function TasksPage() {
     if (memberUserId) addMemberMutation.mutate(memberUserId);
   };
 
-  const { tasks, totalPages } = tasksQuery.data ?? { tasks: [], totalPages: 1 };
+  const { tasks = [], totalPages = 1 } = tasksQuery.data ?? {};
   const members = projectQuery.data?.members ?? [];
 
   return (
@@ -145,9 +107,7 @@ export function TasksPage() {
                   <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
                 ))}
               </select>
-              <button type="submit" disabled={addMemberMutation.isPending} className="btn btn-primary">
-                Add
-              </button>
+              <button type="submit" disabled={addMemberMutation.isPending} className="btn btn-primary">Add</button>
             </form>
             {addMemberMutation.isError && (
               <ErrorMessage message={(addMemberMutation.error as any)?.response?.data?.message} />
@@ -163,26 +123,11 @@ export function TasksPage() {
         {showCreateForm && (
           <form onSubmit={handleCreateTask} className="card form-card">
             <h4>Create Task</h4>
-            <input
-              type="text"
-              placeholder="Task title"
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              required
-              className="input"
-            />
-            <input
-              type="text"
-              placeholder="Description (optional)"
-              value={newDesc}
-              onChange={(e) => setNewDesc(e.target.value)}
-              className="input"
-            />
+            <input type="text" placeholder="Task title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required className="input" />
+            <input type="text" placeholder="Description (optional)" value={newDesc} onChange={(e) => setNewDesc(e.target.value)} className="input" />
             <select value={newAssigneeId} onChange={(e) => setNewAssigneeId(e.target.value)} className="input">
               <option value="">Assign to (optional)</option>
-              {members.map((m) => (
-                <option key={m.userId} value={m.userId}>{m.user.name}</option>
-              ))}
+              {members.map((m) => <option key={m.userId} value={m.userId}>{m.user.name}</option>)}
             </select>
             {createMutation.isError && <ErrorMessage message="Failed to create task" />}
             <button type="submit" disabled={createMutation.isPending} className="btn btn-primary">
@@ -198,9 +143,7 @@ export function TasksPage() {
               <form onSubmit={handleAssign}>
                 <select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} className="input" required>
                   <option value="">Select member</option>
-                  {members.map((m) => (
-                    <option key={m.userId} value={m.userId}>{m.user.name}</option>
-                  ))}
+                  {members.map((m) => <option key={m.userId} value={m.userId}>{m.user.name}</option>)}
                 </select>
                 <div className="modal-actions">
                   <button type="button" onClick={() => setAssigningTask(null)} className="btn btn-secondary">Cancel</button>
@@ -215,7 +158,7 @@ export function TasksPage() {
           {STATUS_FILTERS.map((f) => (
             <button
               key={f.value}
-              onClick={() => { setStatusFilter(f.value as TaskStatus | ''); setPage(1); }}
+              onClick={() => changeFilter(f.value as TaskStatus | '')}
               className={`btn btn-filter ${statusFilter === f.value ? 'active' : ''}`}
             >
               {f.label}
@@ -244,13 +187,9 @@ export function TasksPage() {
 
         {totalPages > 1 && (
           <div className="pagination">
-            <button onClick={() => setPage((p) => p - 1)} disabled={page === 1} className="btn btn-secondary">
-              Previous
-            </button>
+            <button onClick={() => setPage((p) => p - 1)} disabled={page === 1} className="btn btn-secondary">Previous</button>
             <span>Page {page} of {totalPages}</span>
-            <button onClick={() => setPage((p) => p + 1)} disabled={page === totalPages} className="btn btn-secondary">
-              Next
-            </button>
+            <button onClick={() => setPage((p) => p + 1)} disabled={page === totalPages} className="btn btn-secondary">Next</button>
           </div>
         )}
       </div>
