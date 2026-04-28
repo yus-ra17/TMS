@@ -30,7 +30,13 @@ export class TasksService {
     }
 
     return this.prisma.task.create({
-      data: { ...dto, projectId, creatorId: userId },
+      data: {
+        title: dto.title,
+        description: dto.description,
+        assigneeId: dto.assigneeId ?? null,
+        projectId,
+        creatorId: userId,
+      },
       select: TASK_SELECT,
     });
   }
