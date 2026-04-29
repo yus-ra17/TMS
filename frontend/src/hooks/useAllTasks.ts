@@ -16,7 +16,6 @@ export function useAllTasks() {
       queryKey: ['tasks', p.id, 'all'],
       queryFn: () => tasksApi.list(p.id, { page: 1, limit: 200 }),
       enabled: !!p.id,
-      retry: false,
     })),
   });
 
@@ -27,7 +26,6 @@ export function useAllTasks() {
   taskQueries.forEach((q, i) => {
     const project = projects[i];
     const data = q.data as Paginated<Task> | undefined;
-    console.log('project:', project?.name, 'status:', q.status, 'error:', (q.error as any)?.response?.data, 'data:', data);
     data?.data.forEach((t) => tasks.push({ ...t, projectId: project.id, projectName: project.name }));
   });
 

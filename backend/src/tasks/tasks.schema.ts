@@ -16,7 +16,7 @@ export const AssignTaskSchema = z.object({
 
 export const TaskQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().max(50).default(10),
+  limit: z.coerce.number().int().positive().max(200).default(10),
   status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional(),
 });
 
