@@ -24,7 +24,7 @@ export class ProjectsService {
   async findAllForUser(userId: string) {
     return this.prisma.project.findMany({
       where: { members: { some: { userId } } },
-      include: { members: { include: { user: { select: { id: true, name: true, email: true } } } } },
+      include: { members: { select: { id: true, userId: true, role: true, user: { select: { id: true, name: true, email: true } } } } },
     });
   }
 
@@ -32,7 +32,7 @@ export class ProjectsService {
     await this.assertMember(projectId, userId);
     return this.prisma.project.findUnique({
       where: { id: projectId },
-      include: { members: { include: { user: { select: { id: true, name: true, email: true } } } } },
+      include: { members: { select: { id: true, userId: true, role: true, user: { select: { id: true, name: true, email: true } } } } },
     });
   }
 
