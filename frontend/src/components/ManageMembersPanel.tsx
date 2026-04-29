@@ -56,8 +56,8 @@ export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
 
   const err = addMutation.error as any;
   const errMsg = err?.response?.data?.message;
-  const memberIds = new Set(project?.members?.map((m) => m.userId) ?? []);
-  const candidates = users?.filter((u) => !memberIds.has(u.id)) ?? [];
+  const memberIds = new Set(project?.members?.map((m) => m.userId ?? m.user?.id) ?? []);
+  const candidates = users?.filter((u) => !memberIds.has(u.id) && u.id !== currentUser?.id) ?? [];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
