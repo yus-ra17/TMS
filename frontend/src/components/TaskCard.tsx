@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { tasksApi } from '@/api/tasks.api';
 import { useAuthStore } from '@/store/auth.store';
 import { Avatar } from '@/components/Avatar';
@@ -9,8 +10,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { UserPlus, Trash2 } from 'lucide-react';
+import { Clock, Trash2, UserPlus } from 'lucide-react';
 import type { Task, TaskStatus } from '@/types';
+import { cn } from '@/lib/utils';
+import { derivePriority, PRIORITY_STYLES, timeAgo } from '@/lib/task-utils';
 
 interface Props {
   task: Task;
@@ -22,19 +25,28 @@ export function TaskCard({ task, onAssign }: Props) {
   const currentUser = useAuthStore((s) => s.user);
   const assigneeId = task.assigneeId ?? task.assignee?.id;
   const isAssignee = !!currentUser && assigneeId === currentUser.id;
+  const priority = derivePriority(task.id);
 
   const statusMutation = useMutation({
     mutationFn: (status: TaskStatus) => tasksApi.updateStatus(task.id, status),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks', task.projectId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks', task.projectId] });
+      toast.success('Task status updated');
+    },
+    onError: () => toast.error('Could not update status'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => tasksApi.remove(task.id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks', task.projectId] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks', task.projectId] });
+      toast.success('Task deleted');
+    },
+    onError: () => toast.error('Could not delete task'),
   });
 
   return (
-    <div className="group relative rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-elegant hover:-translate-y-0.5 transition-smooth">
+    <div className="group relative rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-elegant hover:-translate-y-1 hover:border-primary/30 transition-smooth animate-fade-in">
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <button
@@ -63,7 +75,7 @@ export function TaskCard({ task, onAssign }: Props) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="flex items-start justify-between gap-3 pr-8">
+      <div className="pr-8">
         <h3 className="font-semibold leading-tight">{task.title}</h3>
       </div>
 
@@ -71,8 +83,16 @@ export function TaskCard({ task, onAssign }: Props) {
         <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{task.description}</p>
       )}
 
-      <div className="mt-4 flex items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <StatusBadge status={task.status} />
+        <span className={cn('inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold', PRIORITY_STYLES[priority])}>
+          {priority}
+        </span>
+        {task.createdAt && (
+          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Clock className="h-3 w-3" /> {timeAgo(task.createdAt)}
+          </span>
+        )}
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-border pt-4">

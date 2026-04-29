@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { projectsApi } from '@/api/projects.api';
 import { usersApi } from '@/api/users.api';
 import { useAuthStore } from '@/store/auth.store';
@@ -38,7 +39,9 @@ export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
       qc.invalidateQueries({ queryKey: ['project', project!.id] });
       qc.invalidateQueries({ queryKey: ['projects'] });
       setSelectedUserId('');
+      toast.success('Member added successfully');
     },
+    onError: (e: any) => toast.error(e?.response?.data?.message || 'Could not add member'),
   });
 
   const removeMutation = useMutation({
@@ -46,12 +49,13 @@ export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['project', project!.id] });
       qc.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Member removed');
     },
+    onError: () => toast.error('Could not remove member'),
   });
 
   const err = addMutation.error as any;
   const errMsg = err?.response?.data?.message;
-
   const memberIds = new Set(project?.members?.map((m) => m.userId) ?? []);
   const candidates = users?.filter((u) => !memberIds.has(u.id)) ?? [];
 
@@ -63,7 +67,7 @@ export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
-          {isOwner && (
+          {isOwner ? (
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                 Add member
@@ -82,10 +86,7 @@ export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button
-                  onClick={() => addMutation.mutate()}
-                  disabled={!selectedUserId || addMutation.isPending}
-                >
+                <Button onClick={() => addMutation.mutate()} disabled={!selectedUserId || addMutation.isPending}>
                   {addMutation.isPending
                     ? <Spinner size="sm" className="text-primary-foreground" />
                     : <><UserPlus className="h-4 w-4 mr-1" />Add</>}
@@ -98,9 +99,7 @@ export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
                 </div>
               )}
             </div>
-          )}
-
-          {!isOwner && (
+          ) : (
             <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
               Only the project owner can add or remove members.
             </div>
@@ -133,12 +132,7 @@ export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
                     {isOwner && m.role !== 'OWNER' && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                            disabled={removeMutation.isPending}
-                          >
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" disabled={removeMutation.isPending}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </AlertDialogTrigger>

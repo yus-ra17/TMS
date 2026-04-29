@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '@/api/projects.api';
 import { useTasks } from '@/hooks/useTasks';
 import { useAuthStore } from '@/store/auth.store';
-import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TaskCard } from '@/components/TaskCard';
@@ -45,9 +44,8 @@ const Tasks = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background bg-mesh">
-      <Navbar />
-      <main className="container py-10">
+    <>
+      <main className="container py-8 max-w-7xl">
         <Link
           to="/projects"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-smooth"
@@ -148,7 +146,7 @@ const Tasks = () => {
       <CreateTaskDialog open={createOpen} onOpenChange={setCreateOpen} project={project} />
       <ManageMembersPanel open={membersOpen} onOpenChange={setMembersOpen} project={project} />
       <AssignTaskDialog task={assigningTask} project={project} onClose={() => setAssigningTask(null)} />
-    </div>
+    </>
   );
 };
 

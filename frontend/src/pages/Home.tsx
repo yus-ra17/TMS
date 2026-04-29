@@ -16,7 +16,7 @@ const Home = () => {
         </div>
         <nav className="flex items-center gap-2">
           {token ? (
-            <Button asChild><Link to="/projects">Open dashboard <ArrowRight className="ml-1 h-4 w-4" /></Link></Button>
+            <Button asChild><Link to="/dashboard">Open dashboard <ArrowRight className="ml-1 h-4 w-4" /></Link></Button>
           ) : (
             <>
               <Button variant="ghost" asChild><Link to="/login">Log in</Link></Button>
