@@ -5,7 +5,11 @@ import { Avatar } from '@/components/Avatar';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, X } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { UserPlus, Trash2 } from 'lucide-react';
 import type { Task, TaskStatus } from '@/types';
 
 interface Props {
@@ -31,15 +35,33 @@ export function TaskCard({ task, onAssign }: Props) {
 
   return (
     <div className="group relative rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-elegant hover:-translate-y-0.5 transition-smooth">
-      <button
-        onClick={() => {
-          if (confirm('Delete this task?')) deleteMutation.mutate();
-        }}
-        className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-smooth"
-        aria-label="Delete task"
-      >
-        <X className="h-4 w-4" />
-      </button>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <button
+            className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-smooth"
+            aria-label="Delete task"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete task?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <span className="font-semibold text-foreground">"{task.title}"</span>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, delete task
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="flex items-start justify-between gap-3 pr-8">
         <h3 className="font-semibold leading-tight">{task.title}</h3>

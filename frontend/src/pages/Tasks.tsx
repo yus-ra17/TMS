@@ -36,7 +36,7 @@ const Tasks = () => {
   const { data, isLoading, isFetching, error } = useTasks(projectId, page, status);
 
   const isOwner = project?.members?.some(
-    (m) => m.userId === currentUser?.id && m.role === 'OWNER'
+    (m) => (m.userId === currentUser?.id || m.user?.id === currentUser?.id) && m.role === 'OWNER'
   ) ?? false;
 
   const handleFilterChange = (v: string) => {

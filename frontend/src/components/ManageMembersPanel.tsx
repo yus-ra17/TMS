@@ -6,6 +6,10 @@ import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Avatar } from '@/components/Avatar';
 import { Spinner } from '@/components/Spinner';
 import { AlertCircle, Crown, Trash2, UserPlus } from 'lucide-react';
@@ -25,7 +29,7 @@ export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
   const { data: users } = useQuery({ queryKey: ['users'], queryFn: usersApi.list, enabled: open });
 
   const isOwner = project?.members?.some(
-    (m) => m.userId === currentUser?.id && m.role === 'OWNER'
+    (m) => (m.userId === currentUser?.id || m.user?.id === currentUser?.id) && m.role === 'OWNER'
   ) ?? false;
 
   const addMutation = useMutation({
@@ -127,15 +131,35 @@ export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
                       {m.role}
                     </span>
                     {isOwner && m.role !== 'OWNER' && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                        disabled={removeMutation.isPending}
-                        onClick={() => removeMutation.mutate(m.userId)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            disabled={removeMutation.isPending}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove member?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to remove <span className="font-semibold text-foreground">{m.user?.name}</span> from this project? They will lose access to all tasks.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => removeMutation.mutate(m.userId)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Yes, remove member
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </div>
                 </li>
