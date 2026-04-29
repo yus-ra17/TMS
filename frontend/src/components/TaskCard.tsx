@@ -18,62 +18,56 @@ import { derivePriority, PRIORITY_STYLES, timeAgo } from '@/lib/task-utils';
 interface Props {
   task: Task;
   onAssign: (task: Task) => void;
+  isOwner?: boolean;
 }
 
-export function TaskCard({ task, onAssign }: Props) {
+export function TaskCard({ task, onAssign, isOwner = false }: Props) {
   const qc = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
   const assigneeId = task.assigneeId ?? task.assignee?.id;
   const isAssignee = !!currentUser && assigneeId === currentUser.id;
+  const isCreator = !!currentUser && (task.creatorId === currentUser.id || task.creator?.id === currentUser.id);
+  const canManage = isOwner || isCreator;
   const priority = derivePriority(task.id);
 
   const statusMutation = useMutation({
     mutationFn: (status: TaskStatus) => tasksApi.updateStatus(task.id, status),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['tasks', task.projectId] });
-      toast.success('Task status updated');
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tasks', task.projectId] }); toast.success('Status updated'); },
     onError: () => toast.error('Could not update status'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => tasksApi.remove(task.id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['tasks', task.projectId] });
-      toast.success('Task deleted');
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tasks', task.projectId] }); toast.success('Task deleted'); },
     onError: () => toast.error('Could not delete task'),
   });
 
   return (
     <div className="group relative rounded-2xl border border-border bg-card p-5 shadow-sm hover:shadow-elegant hover:-translate-y-1 hover:border-primary/30 transition-smooth animate-fade-in">
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <button
-            className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-smooth"
-            aria-label="Delete task"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete task?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <span className="font-semibold text-foreground">"{task.title}"</span>? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteMutation.mutate()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Yes, delete task
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+
+      {canManage && (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-smooth">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete task?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete <span className="font-semibold text-foreground">"{task.title}"</span>? This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => deleteMutation.mutate()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Yes, delete task
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
       <div className="pr-8">
         <h3 className="font-semibold leading-tight">{task.title}</h3>
@@ -102,30 +96,24 @@ export function TaskCard({ task, onAssign }: Props) {
               <Avatar name={task.assignee.name} />
               <div className="min-w-0">
                 <p className="text-xs font-medium truncate">{task.assignee.name}</p>
-                {task.creator && (
-                  <p className="text-[11px] text-muted-foreground truncate">by {task.creator.name}</p>
-                )}
+                {task.creator && <p className="text-[11px] text-muted-foreground truncate">by {task.creator.name}</p>}
               </div>
             </>
           ) : (
             <span className="text-xs text-muted-foreground italic">Unassigned</span>
           )}
         </div>
-        <Button size="sm" variant="ghost" onClick={() => onAssign(task)} className="h-8 px-2">
-          <UserPlus className="h-3.5 w-3.5" />
-        </Button>
+        {canManage && (
+          <Button size="sm" variant="ghost" onClick={() => onAssign(task)} className="h-8 px-2">
+            <UserPlus className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
 
       {isAssignee && (
         <div className="mt-3">
-          <Select
-            value={task.status}
-            onValueChange={(v) => statusMutation.mutate(v as TaskStatus)}
-            disabled={statusMutation.isPending}
-          >
-            <SelectTrigger className="h-9 text-xs">
-              <SelectValue />
-            </SelectTrigger>
+          <Select value={task.status} onValueChange={(v) => statusMutation.mutate(v as TaskStatus)} disabled={statusMutation.isPending}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="TODO">To Do</SelectItem>
               <SelectItem value="IN_PROGRESS">In Progress</SelectItem>

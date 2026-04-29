@@ -38,6 +38,10 @@ const Tasks = () => {
     (m) => (m.userId === currentUser?.id || m.user?.id === currentUser?.id) && m.role === 'OWNER'
   ) ?? false;
 
+  const isMember = project?.members?.some(
+    (m) => (m.userId === currentUser?.id || m.user?.id === currentUser?.id)
+  ) ?? false;
+
   const handleFilterChange = (v: string) => {
     setFilter(v as Filter);
     setPage(1);
@@ -66,9 +70,11 @@ const Tasks = () => {
                 <Users className="mr-1.5 h-4 w-4" /> Manage members
               </Button>
             )}
-            <Button onClick={() => setCreateOpen(true)} className="shadow-elegant">
-              <Plus className="mr-1.5 h-4 w-4" /> New task
-            </Button>
+            {isOwner && (
+              <Button onClick={() => setCreateOpen(true)} className="shadow-elegant">
+                <Plus className="mr-1.5 h-4 w-4" /> New task
+              </Button>
+            )}
           </div>
         </div>
 
@@ -101,7 +107,7 @@ const Tasks = () => {
               <p className="text-sm text-muted-foreground mt-1 max-w-sm">
                 {filter === 'ALL' ? 'Create your first task to get started.' : 'No tasks match this filter.'}
               </p>
-              {filter === 'ALL' && (
+              {filter === 'ALL' && isOwner && (
                 <Button onClick={() => setCreateOpen(true)} className="mt-6">
                   <Plus className="mr-1.5 h-4 w-4" /> New task
                 </Button>
@@ -113,7 +119,7 @@ const Tasks = () => {
             <div className={isFetching ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {data.data.map((t) => (
-                  <TaskCard key={t.id} task={t} onAssign={setAssigningTask} />
+                  <TaskCard key={t.id} task={t} onAssign={setAssigningTask} isOwner={isOwner} />
                 ))}
               </div>
 
