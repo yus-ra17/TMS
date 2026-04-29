@@ -1,4 +1,4 @@
-import { Task, TaskStatus } from '../types';
+import type { Task, TaskStatus } from '../types';
 import { useAuthStore } from '../store/auth.store';
 
 interface Props {

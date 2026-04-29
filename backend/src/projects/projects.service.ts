@@ -12,14 +12,13 @@ export class ProjectsService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateProjectDto, userId: string) {
-    const project = await this.prisma.project.create({
+    return this.prisma.project.create({
       data: {
         name: dto.name,
         description: dto.description,
-        members: { create: { userId, role: 'OWNER' } },
+        members: { create: { user: { connect: { id: userId } }, role: 'OWNER' } },
       },
     });
-    return project;
   }
 
   async findAllForUser(userId: string) {

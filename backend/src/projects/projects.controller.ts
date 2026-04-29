@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Post, Delete, Body, Param, UseGuards, UsePipes,
+  Controller, Get, Post, Delete, Body, Param, UseGuards,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectSchema, AddMemberSchema, CreateProjectDto, AddMemberDto } from './projects.schema';
@@ -13,8 +13,10 @@ export class ProjectsController {
   constructor(private projectsService: ProjectsService) {}
 
   @Post()
-  @UsePipes(new ZodValidationPipe(CreateProjectSchema))
-  create(@Body() dto: CreateProjectDto, @CurrentUser() user: any) {
+  create(
+    @Body(new ZodValidationPipe(CreateProjectSchema)) dto: CreateProjectDto,
+    @CurrentUser() user: any,
+  ) {
     return this.projectsService.create(dto, user.id);
   }
 

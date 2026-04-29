@@ -1,3 +1,9 @@
+export interface AuthResponse {
+  access_token: string;
+  userId: string;
+  email: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -40,10 +46,4 @@ export interface PaginatedTasks {
   page: number;
   limit: number;
   totalPages: number;
-}
-
-export interface AuthResponse {
-  access_token: string;
-  userId: string;
-  email: string;
 }

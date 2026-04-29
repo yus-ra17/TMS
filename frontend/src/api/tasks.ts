@@ -1,5 +1,5 @@
 import api from './client';
-import { PaginatedTasks, Task, TaskStatus } from '../types';
+import type { PaginatedTasks, Task, TaskStatus } from '../types';
 
 export const tasksApi = {
   getAll: (projectId: string, params: { page?: number; limit?: number; status?: TaskStatus }) =>

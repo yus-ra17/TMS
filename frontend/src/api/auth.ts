@@ -1,5 +1,5 @@
 import api from './client';
-import { AuthResponse } from '../types';
+import type { AuthResponse } from '../types';
 
 export const authApi = {
   register: (data: { name: string; email: string; password: string }) =>

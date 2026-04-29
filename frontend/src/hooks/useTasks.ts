@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { tasksApi } from '../api/tasks';
-import { TaskStatus } from '../types';
+import type { TaskStatus } from '../types';
 
 export function useTasks(projectId: string) {
   const queryClient = useQueryClient();

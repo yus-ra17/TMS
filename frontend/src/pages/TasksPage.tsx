@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '../api/projects';
 import { usersApi } from '../api/users';
 import { useTasks } from '../hooks/useTasks';
-import { Task, TaskStatus } from '../types';
+import type { Task, TaskStatus } from '../types';
 import { Navbar } from '../components/Navbar';
 import { TaskCard } from '../components/TaskCard';
 import { Spinner } from '../components/ui/Spinner';

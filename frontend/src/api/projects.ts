@@ -1,5 +1,5 @@
 import api from './client';
-import { Project } from '../types';
+import type { Project } from '../types';
 
 export const projectsApi = {
   getAll: () => api.get<Project[]>('/projects').then((r) => r.data),
