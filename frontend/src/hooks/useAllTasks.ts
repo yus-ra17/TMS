@@ -26,6 +26,7 @@ export function useAllTasks() {
   taskQueries.forEach((q, i) => {
     const project = projects[i];
     const data = q.data as Paginated<Task> | undefined;
+    console.log('project:', project?.name, 'tasks data:', data);
     data?.data.forEach((t) => tasks.push({ ...t, projectId: project.id, projectName: project.name }));
   });
 
