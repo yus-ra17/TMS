@@ -31,13 +31,13 @@ export function CreateTaskDialog({ open, onOpenChange, project }: Props) {
         assigneeId: assigneeId || undefined,
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['tasks', project!.id] });
-      qc.invalidateQueries({ queryKey: ['tasks', project!.id, 'all'] });
+      qc.invalidateQueries({ queryKey: ['tasks', project!.id], exact: false });
       setTitle('');
       setDescription('');
       setAssigneeId('');
       onOpenChange(false);
     },
+    onError: (e: any) => console.error('Create task error:', e?.response?.data),
   });
 
   const err = mutation.error as any;
