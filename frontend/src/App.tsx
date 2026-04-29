@@ -1,31 +1,37 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
-import { ProjectsPage } from './pages/ProjectsPage';
-import { TasksPage } from './pages/TasksPage';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Projects from "./pages/Projects";
+import Tasks from "./pages/Tasks";
+import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { retry: 1, staleTime: 30_000 },
-  },
+  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
 
-export default function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route element={<ProtectedRoute />}>
-            <Route path="/projects" element={<ProjectsPage />} />
-            <Route path="/projects/:projectId/tasks" element={<TasksPage />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/projects" replace />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
-    </QueryClientProvider>
-  );
-}
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;

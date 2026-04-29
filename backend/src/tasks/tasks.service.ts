@@ -53,7 +53,7 @@ export class TasksService {
       this.prisma.task.count({ where }),
     ]);
 
-    return { tasks, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { data: tasks, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async updateStatus(taskId: string, dto: UpdateTaskStatusDto, userId: string) {
