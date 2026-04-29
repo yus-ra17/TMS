@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { projectsApi } from '@/api/projects.api';
 import { usersApi } from '@/api/users.api';
+import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar } from '@/components/Avatar';
 import { Spinner } from '@/components/Spinner';
-import { AlertCircle, Crown, UserPlus } from 'lucide-react';
+import { AlertCircle, Crown, Trash2, UserPlus } from 'lucide-react';
 import type { Project } from '@/types';
 
 interface Props {
@@ -18,15 +19,29 @@ interface Props {
 
 export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
   const qc = useQueryClient();
+  const currentUser = useAuthStore((s) => s.user);
   const [selectedUserId, setSelectedUserId] = useState('');
 
   const { data: users } = useQuery({ queryKey: ['users'], queryFn: usersApi.list, enabled: open });
+
+  const isOwner = project?.members?.some(
+    (m) => m.userId === currentUser?.id && m.role === 'OWNER'
+  ) ?? false;
 
   const addMutation = useMutation({
     mutationFn: () => projectsApi.addMember(project!.id, selectedUserId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['project', project!.id] });
+      qc.invalidateQueries({ queryKey: ['projects'] });
       setSelectedUserId('');
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (userId: string) => projectsApi.removeMember(project!.id, userId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['project', project!.id] });
+      qc.invalidateQueries({ queryKey: ['projects'] });
     },
   });
 
@@ -44,38 +59,48 @@ export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-              Add member
-            </h4>
-            <div className="flex gap-2">
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select a user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {candidates.length === 0 && (
-                    <div className="p-2 text-sm text-muted-foreground">No users available</div>
-                  )}
-                  {candidates.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>{u.name} · {u.email}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                onClick={() => addMutation.mutate()}
-                disabled={!selectedUserId || addMutation.isPending}
-              >
-                {addMutation.isPending ? <Spinner size="sm" className="text-primary-foreground" /> : <><UserPlus className="h-4 w-4 mr-1" />Add</>}
-              </Button>
-            </div>
-            {errMsg && (
-              <div className="mt-3 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                <span>{Array.isArray(errMsg) ? errMsg.join(', ') : errMsg}</span>
+          {isOwner && (
+            <div>
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                Add member
+              </h4>
+              <div className="flex gap-2">
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select a user" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {candidates.length === 0 && (
+                      <div className="p-2 text-sm text-muted-foreground">No users available</div>
+                    )}
+                    {candidates.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>{u.name} · {u.email}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() => addMutation.mutate()}
+                  disabled={!selectedUserId || addMutation.isPending}
+                >
+                  {addMutation.isPending
+                    ? <Spinner size="sm" className="text-primary-foreground" />
+                    : <><UserPlus className="h-4 w-4 mr-1" />Add</>}
+                </Button>
               </div>
-            )}
-          </div>
+              {errMsg && (
+                <div className="mt-3 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <span>{Array.isArray(errMsg) ? errMsg.join(', ') : errMsg}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isOwner && (
+            <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+              Only the project owner can add or remove members.
+            </div>
+          )}
 
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
@@ -91,17 +116,28 @@ export function ManageMembersPanel({ open, onOpenChange, project }: Props) {
                       <p className="text-xs text-muted-foreground truncate">{m.user?.email}</p>
                     </div>
                   </div>
-                  <span
-                    className={
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={
                       'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ' +
                       (m.role === 'OWNER'
                         ? 'border-warning/30 bg-warning/10 text-warning'
                         : 'border-border bg-muted text-muted-foreground')
-                    }
-                  >
-                    {m.role === 'OWNER' && <Crown className="h-3 w-3" />}
-                    {m.role}
-                  </span>
+                    }>
+                      {m.role === 'OWNER' && <Crown className="h-3 w-3" />}
+                      {m.role}
+                    </span>
+                    {isOwner && m.role !== 'OWNER' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        disabled={removeMutation.isPending}
+                        onClick={() => removeMutation.mutate(m.userId)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
