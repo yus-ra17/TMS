@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { projectsApi } from '@/api/projects.api';
 import { useTasks } from '@/hooks/useTasks';
+import { useAuthStore } from '@/store/auth.store';
 import { Navbar } from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +19,7 @@ type Filter = 'ALL' | TaskStatus;
 
 const Tasks = () => {
   const { projectId = '' } = useParams<{ projectId: string }>();
+  const currentUser = useAuthStore((s) => s.user);
   const [filter, setFilter] = useState<Filter>('ALL');
   const [page, setPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
@@ -32,6 +34,10 @@ const Tasks = () => {
 
   const status = filter === 'ALL' ? undefined : filter;
   const { data, isLoading, isFetching, error } = useTasks(projectId, page, status);
+
+  const isOwner = project?.members?.some(
+    (m) => m.userId === currentUser?.id && m.role === 'OWNER'
+  ) ?? false;
 
   const handleFilterChange = (v: string) => {
     setFilter(v as Filter);
@@ -57,9 +63,11 @@ const Tasks = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setMembersOpen(true)}>
-              <Users className="mr-1.5 h-4 w-4" /> Manage members
-            </Button>
+            {isOwner && (
+              <Button variant="outline" onClick={() => setMembersOpen(true)}>
+                <Users className="mr-1.5 h-4 w-4" /> Manage members
+              </Button>
+            )}
             <Button onClick={() => setCreateOpen(true)} className="shadow-elegant">
               <Plus className="mr-1.5 h-4 w-4" /> New task
             </Button>
