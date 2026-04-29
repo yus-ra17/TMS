@@ -73,6 +73,16 @@ export class TasksService {
   async assignTask(taskId: string, dto: AssignTaskDto, userId: string) {
     const task = await this.getTaskOrThrow(taskId);
     await this.projectsService.assertMember(task.projectId, userId);
+
+    // Only the task creator or project owner can assign/reassign a task
+    const member = await this.projectsService.assertMember(task.projectId, userId);
+    const isOwner = member.role === 'OWNER';
+    const isCreator = task.creatorId === userId;
+
+    if (!isOwner && !isCreator) {
+      throw new ForbiddenException('Only the task creator or project owner can assign tasks');
+    }
+
     await this.projectsService.assertMember(task.projectId, dto.assigneeId);
 
     return this.prisma.task.update({
