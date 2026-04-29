@@ -32,6 +32,7 @@ export function CreateTaskDialog({ open, onOpenChange, project }: Props) {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tasks', project!.id] });
+      qc.invalidateQueries({ queryKey: ['tasks', project!.id, 'all'] });
       setTitle('');
       setDescription('');
       setAssigneeId('');
@@ -66,7 +67,7 @@ export function CreateTaskDialog({ open, onOpenChange, project }: Props) {
               <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
               <SelectContent>
                 {project?.members?.map((m) => (
-                  <SelectItem key={m.userId} value={m.userId}>{m.user?.name}</SelectItem>
+                  <SelectItem key={m.userId ?? m.user?.id} value={m.userId ?? m.user?.id ?? ''}>{m.user?.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
