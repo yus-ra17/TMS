@@ -1,11 +1,7 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProjectDto, AddMemberDto } from './projects.schema';
+import { Role } from '../common/enums';
 
 @Injectable()
 export class ProjectsService {
@@ -16,7 +12,7 @@ export class ProjectsService {
       data: {
         name: dto.name,
         description: dto.description,
-        members: { create: { user: { connect: { id: userId } }, role: 'OWNER' } },
+        members: { create: { user: { connect: { id: userId } }, role: Role.OWNER } },
       },
     });
   }
@@ -69,6 +65,6 @@ export class ProjectsService {
 
   private async assertOwner(projectId: string, userId: string) {
     const member = await this.assertMember(projectId, userId);
-    if (member.role !== 'OWNER') throw new ForbiddenException('Only owners can manage members');
+    if (member.role !== Role.OWNER) throw new ForbiddenException('Only owners can manage members');
   }
 }

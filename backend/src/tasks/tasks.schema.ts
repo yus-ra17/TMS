@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TaskStatus } from '../common/enums';
 
 export const CreateTaskSchema = z.object({
   title: z.string().min(1),
@@ -7,7 +8,7 @@ export const CreateTaskSchema = z.object({
 });
 
 export const UpdateTaskStatusSchema = z.object({
-  status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']),
+  status: z.nativeEnum(TaskStatus),
 });
 
 export const AssignTaskSchema = z.object({
@@ -17,7 +18,7 @@ export const AssignTaskSchema = z.object({
 export const TaskQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(200).default(10),
-  status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional(),
+  status: z.nativeEnum(TaskStatus).optional(),
 });
 
 export type CreateTaskDto = z.infer<typeof CreateTaskSchema>;
