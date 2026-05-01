@@ -37,7 +37,7 @@ export function CreateTaskDialog({ open, onOpenChange, project }: Props) {
       setAssigneeId('');
       onOpenChange(false);
     },
-    onError: (e: any) => console.error('Create task error:', e?.response?.data),
+    onError: (e: any) => toast.error(e?.response?.data?.message || 'Could not create task'),
   });
 
   const err = mutation.error as any;
