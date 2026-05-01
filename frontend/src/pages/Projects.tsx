@@ -85,83 +85,98 @@ const Projects = () => {
         />
       )}
 
-      {projects && projects.length > 0 && (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((p, idx) => {
-            const tasks = taskQueries[idx]?.data?.data ?? [];
-            const total = tasks.length;
-            const done = tasks.filter((t) => t.status === 'DONE').length;
-            const pct = total ? Math.round((done / total) * 100) : 0;
-            const isOwner = !!currentUser && p.ownerId === currentUser.id;
-            const members = p.members ?? [];
+      {projects && projects.length > 0 && (() => {
+        const myProjects = projects.filter((p) => p.members?.some(
+          (m) => (m.userId === currentUser?.id || m.user?.id === currentUser?.id) && m.role === 'OWNER'
+        ));
+        const memberProjects = projects.filter((p) => p.members?.some(
+          (m) => (m.userId === currentUser?.id || m.user?.id === currentUser?.id) && m.role === 'MEMBER'
+        ));
 
-            return (
-              <Link
-                key={p.id}
-                to={`/projects/${p.id}/tasks`}
-                className="group rounded-2xl border border-border bg-card p-6 shadow-sm hover:shadow-elegant hover:-translate-y-1 hover:border-primary/30 transition-smooth animate-fade-in"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary group-hover:gradient-primary group-hover:text-primary-foreground transition-smooth">
-                    <FolderKanban className="h-5 w-5" />
-                  </div>
-                  {isOwner && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
-                      <Crown className="h-3 w-3" /> OWNER
-                    </span>
-                  )}
+        const ProjectCard = ({ p, idx }: { p: any; idx: number }) => {
+          const tasks = taskQueries[projects.indexOf(p)]?.data?.data ?? [];
+          const total = tasks.length;
+          const done = tasks.filter((t: any) => t.status === 'DONE').length;
+          const pct = total ? Math.round((done / total) * 100) : 0;
+          const isOwner = p.members?.some(
+            (m: any) => (m.userId === currentUser?.id || m.user?.id === currentUser?.id) && m.role === 'OWNER'
+          ) ?? false;
+          const members = p.members ?? [];
+          return (
+            <Link key={p.id} to={`/projects/${p.id}/tasks`}
+              className="group rounded-2xl border border-border bg-card p-6 shadow-sm hover:shadow-elegant hover:-translate-y-1 hover:border-primary/30 transition-smooth animate-fade-in"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-soft text-primary group-hover:gradient-primary group-hover:text-primary-foreground transition-smooth">
+                  <FolderKanban className="h-5 w-5" />
                 </div>
-
-                <h3 className="text-base font-semibold leading-tight group-hover:text-primary transition-smooth">
-                  {p.name}
-                </h3>
-                {p.description && (
-                  <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">{p.description}</p>
+                {isOwner ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 text-[10px] font-semibold text-warning">
+                    <Crown className="h-3 w-3" /> OWNER
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                    <Users className="h-3 w-3" /> MEMBER
+                  </span>
                 )}
-
-                {/* Progress */}
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-muted-foreground">{total} task{total !== 1 ? 's' : ''}</span>
-                    <span className="font-semibold">{pct}%</span>
-                  </div>
-                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full gradient-primary transition-all duration-500"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
+              </div>
+              <h3 className="text-base font-semibold leading-tight group-hover:text-primary transition-smooth">{p.name}</h3>
+              {p.description && <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">{p.description}</p>}
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="text-muted-foreground">{total} task{total !== 1 ? 's' : ''}</span>
+                  <span className="font-semibold">{pct}%</span>
                 </div>
-
-                {/* Members */}
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="flex -space-x-2">
-                    {members.slice(0, 4).map((m) => (
-                      <div
-                        key={m.userId}
-                        className="flex h-7 w-7 items-center justify-center rounded-full gradient-primary text-[10px] font-semibold text-primary-foreground border-2 border-card"
-                        title={m.user?.name}
-                      >
-                        {(m.user?.name?.[0] || '?').toUpperCase()}
-                      </div>
-                    ))}
-                    {members.length > 4 && (
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground border-2 border-card">
-                        +{members.length - 4}
-                      </div>
-                    )}
-                    {members.length === 0 && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Users className="h-3.5 w-3.5" /> No members
-                      </div>
-                    )}
-                  </div>
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full gradient-primary transition-all duration-500" style={{ width: `${pct}%` }} />
                 </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+              </div>
+              <div className="mt-4 flex -space-x-2">
+                {members.slice(0, 4).map((m: any) => (
+                  <div key={m.userId ?? m.user?.id}
+                    className="flex h-7 w-7 items-center justify-center rounded-full gradient-primary text-[10px] font-semibold text-primary-foreground border-2 border-card"
+                    title={m.user?.name}
+                  >
+                    {(m.user?.name?.[0] || '?').toUpperCase()}
+                  </div>
+                ))}
+                {members.length > 4 && (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground border-2 border-card">+{members.length - 4}</div>
+                )}
+              </div>
+            </Link>
+          );
+        };
+
+        return (
+          <div className="space-y-10">
+            {myProjects.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Crown className="h-4 w-4 text-warning" />
+                  <h2 className="text-lg font-semibold">My Projects</h2>
+                  <span className="text-sm text-muted-foreground">({myProjects.length})</span>
+                </div>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {myProjects.map((p, i) => <ProjectCard key={p.id} p={p} idx={i} />)}
+                </div>
+              </div>
+            )}
+            {memberProjects.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="text-lg font-semibold">Projects I'm In</h2>
+                  <span className="text-sm text-muted-foreground">({memberProjects.length})</span>
+                </div>
+                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {memberProjects.map((p, i) => <ProjectCard key={p.id} p={p} idx={i} />)}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
