@@ -3,15 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '@/api/auth.api';
 import { useAuthStore } from '@/store/auth.store';
+import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/Spinner';
-import { LayoutGrid, AlertCircle } from 'lucide-react';
+import { LayoutGrid, AlertCircle, Moon, Sun } from 'lucide-react';
 
 const Register = () => {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const { theme, toggle } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,6 +33,15 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background bg-mesh px-4 py-10">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggle}
+        aria-label="Toggle theme"
+        className="fixed top-4 right-4 h-9 w-9"
+      >
+        {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      </Button>
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shadow-glow">

@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
-import { ArrowRight, CheckCircle2, LayoutGrid, Users, Zap, Shield } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
+import { ArrowRight, CheckCircle2, LayoutGrid, Users, Zap, Shield, Moon, Sun } from 'lucide-react';
 
 const Home = () => {
   const token = useAuthStore((s) => s.token);
+  const { theme, toggle } = useTheme();
   return (
     <div className="min-h-screen bg-background bg-mesh">
       <header className="container flex h-16 items-center justify-between">
@@ -15,6 +17,9 @@ const Home = () => {
           <span className="text-lg font-bold tracking-tight">TMS</span>
         </div>
         <nav className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme" className="h-9 w-9">
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
           {token ? (
             <Button asChild><Link to="/dashboard">Open dashboard <ArrowRight className="ml-1 h-4 w-4" /></Link></Button>
           ) : (
@@ -106,7 +111,7 @@ const Home = () => {
       <footer className="border-t border-border/60">
         <div className="container flex h-16 items-center justify-between text-sm text-muted-foreground">
           <span>© {new Date().getFullYear()} TMS. All rights reserved.</span>
-          <span>Built with care.</span>
+          <span>Developed by Yusra Mohammed</span>
         </div>
       </footer>
     </div>

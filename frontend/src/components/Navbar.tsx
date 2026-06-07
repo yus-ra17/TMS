@@ -1,11 +1,13 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
-import { LayoutGrid, LogOut } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
+import { LayoutGrid, LogOut, Moon, Sun } from 'lucide-react';
 
 export function Navbar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const { theme, toggle } = useTheme();
 
   const handleLogout = () => {
     logout();
@@ -22,6 +24,15 @@ export function Navbar() {
           <span className="text-lg font-bold tracking-tight">TMS</span>
         </Link>
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggle}
+            aria-label="Toggle theme"
+            className="h-9 w-9"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
           {user && (
             <div className="hidden sm:flex items-center gap-3 rounded-full bg-secondary px-3 py-1.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-full gradient-primary text-xs font-semibold text-primary-foreground">
